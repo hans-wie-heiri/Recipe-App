@@ -170,6 +170,8 @@ poetry.toml
 ### specific for this project ###
 
 *.ipynb
-image_creation_archive/
+.streamlit/secrets.toml
+*secrets.toml
+
 
 # End of https://www.toptal.com/developers/gitignore/api/python

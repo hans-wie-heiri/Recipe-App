@@ -1,15 +1,24 @@
 
 import os
+import calendar
+from datetime import datetime
+import pandas as pd
+from nltk.tokenize import LineTokenizer
+import nltk
+import time
+import streamlit as st
+from streamlit_option_menu import option_menu 
+import plotly.graph_objects as go
+import plotly.express as px
 from deta import Deta
 from dotenv import load_dotenv
 import pandas as pd
 import nltk
 
 # load the environment variables from the .env file in the directory (here the project key to the database)
-load_dotenv(".env")
-DETA_KEY = os.getenv("DETA_KEY")
+#load_dotenv(".env")
+DETA_KEY = st.secrets["DB_KEY"]
 
-# DETA_KEY = 'a0u4mtpgewp_UpfmN8fJUQLmNxWwF51Vb11baGRTYqsW'
 
 # Initialize with a project key
 deta = Deta(DETA_KEY)
