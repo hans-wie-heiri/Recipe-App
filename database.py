@@ -34,6 +34,15 @@ def insert_recipe_ingredients(df):
                  'unit' : str(df['unit'][i])
                             })
 
+# function that deletes recipe
+def delete_recipe(recipe_name):
+    db1.delete(recipe_name)
+
+# function that deletes recipe 
+def delete_recipe_ingredients(update_ingredients_df):
+    for i in range(len(update_ingredients_df)):
+        db2.delete(update_ingredients_df['ingredients_keys'][i])
+
 # function that fethes all names as a dictionary
 def fetch_all_recipes():
     res = db1.fetch()
@@ -55,24 +64,45 @@ def get_recipe_ingredients(recipe_id):
     amounts = []
     units = []
     ingredient_id = []
+    ingredients_keys = []
     for i in res.items:
         amounts.append(i['amount'])
         ingredients.append(i['ingredient'])
         units.append(i['unit'])
         ingredient_id.append(i['ingredient_id'])
+        ingredients_keys.append(i['key'])
         
     ingredients_dict = {
         'ingredients': ingredients,
         'amounts' : amounts,
         'units' : units,
-        'id' : ingredient_id
+        'id' : ingredient_id,
+        'ingredients_keys' : ingredients_keys
     }
-
+    
     ingredient_df = pd.DataFrame(ingredients_dict)
     ingredient_df = ingredient_df.sort_values('id').reset_index(drop=True).drop('id', axis = 1)
 
     return ingredient_df
 
+def create_ingredients_text(ingredients_df):
+    ingredients_list = []
+    for i in range(len(ingredients_df)):
+        if ingredients_df['amounts'][i] == '0.0':
+            amount_char = ''
+        else:
+            amount_char = str(ingredients_df['amounts'][i])
+
+        if ingredients_df['units'][i] == 'keine':
+            unit_char = ''
+        else:
+            unit_char = str(ingredients_df['units'][i])
+
+        ingredients_list.append(ingredients_df['ingredients'][i] + ' ' + amount_char + ' ' + unit_char)
+
+        ingredients_list_onetext = "\n ".join(ingredients_list)
+        
+    return ingredients_list_onetext
 
 def get_all_ingredients():
     res = db2.fetch()

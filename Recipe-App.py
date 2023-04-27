@@ -75,12 +75,32 @@ if db.check_password():
     # ------------- Input and save recipes --------------
     if selected == "Add Recipe":
         st.header('Add Recipe')
+        st.write('To change an existing recipe, just enter the name. Make sure the spelling matches.')
 
         recipe_name = st.text_input('Insert the Recipe Name')
-        if recipe_name in name_tag_df['name'].unique():
+        update_recipe = recipe_name in name_tag_df['name'].unique() # returns true if name allready exists
+
+        # if the recipe already exists it will be update
+        if update_recipe:
             st.warning('There is allready a recipe with this name. The previous recipe will be overwritten.', icon="⚠️")
 
-        ingredients_txt = st.text_area("Insert Recipe Ingredients (with a line break)",  height = 250)
+            update_recipe_name = st.text_input('Insert the New Recipe Name', recipe_name)
+
+            update_recipe_data = db.get_recipe_data(recipe_name)    # comes from selectbox above
+            update_description = update_recipe_data.get("description")
+            update_recipe_id = update_recipe_data.get("recipe_id")
+            update_recipe_tags = update_recipe_data.get("tags")
+            
+            update_ingredients_df = db.get_recipe_ingredients(update_recipe_id)
+
+            update_ingredients = db.create_ingredients_text(update_ingredients_df)
+        else:
+            update_ingredients = """"""
+            update_description = """"""
+            update_recipe_tags = ""
+            update_recipe_name = recipe_name
+
+        ingredients_txt = st.text_area("Insert Recipe Ingredients (with a line break)", update_ingredients,  height = 250)
 
         if "extraction_state" not in st.session_state :
             st.session_state.extraction_state = False
@@ -146,14 +166,17 @@ if db.check_password():
             st.write("That's how it will be saved:")
             st.dataframe(df[['ingredient', 'amount', 'unit']])
 
-        description_txt = st.text_area("Insert Recipe Description",  height = 250)
+        description_txt = st.text_area("Insert Recipe Description", update_description,  height = 250)
 
-        tags_txt = st.text_input("Insert Tags")
+        tags_txt = st.text_input("Insert Tags", update_recipe_tags)
 
-        if len(ingredients_txt) > 0 and len(df) > 0 and len(description_txt) > 0:
+        if len(update_recipe_name) > 0 and len(ingredients_txt) > 0 and len(df) > 0 and len(description_txt) > 0:
             submitted = st.button('Save Recipe')
             if submitted:
-                db.insert_recipe(recipe_name, recipe_id, description_txt, tags_txt)
+                if update_recipe:
+                    db.delete_recipe(recipe_name)
+                    db.delete_recipe_ingredients(update_ingredients_df)
+                db.insert_recipe(update_recipe_name, recipe_id, description_txt, tags_txt)
                 db.insert_recipe_ingredients(df)
                 st.success("Data saved!")
 
@@ -216,3 +239,7 @@ if db.check_password():
                     unit_char = str(ingredients_df['units'][i])
 
                 st.write(ingredients_df['ingredients'][i] + ' ' + amount_char + ' ' + unit_char)
+
+            # ingredients_list_onetext = db.create_ingredients_text(ingredients_df)
+
+            # st.write(ingredients_list_onetext)
