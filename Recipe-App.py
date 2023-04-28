@@ -187,7 +187,7 @@ if db.check_password():
 
         
         # user selction by ingredient
-        us_ingredients = st.multiselect('Do you want to select specific ingredients?', recipe_ingredient_df['ingredient'].unique())
+        us_ingredients = st.multiselect('Do you want to select specific ingredients?', sorted(recipe_ingredient_df['ingredient'].unique()))
 
         if len(us_ingredients) > 0:
             ingredients_subset_df = recipe_ingredient_df[recipe_ingredient_df['ingredient'].isin(us_ingredients)]
@@ -195,7 +195,7 @@ if db.check_password():
             name_tag_df = name_tag_df[name_tag_df['recipe_id'].isin(remaining_ids)]
 
         # user selction by tag
-        us_tags = st.multiselect('Do you want to search specific tags?', name_tag_df['tag'].unique())
+        us_tags = st.multiselect('Do you want to search specific tags?', sorted(name_tag_df['tag'].unique()))
         if len(us_tags) > 0:
             tag_subset_df = name_tag_df[name_tag_df['tag'].isin(us_tags)]
         else: 
