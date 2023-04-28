@@ -212,6 +212,7 @@ if db.check_password():
         recipe_data = db.get_recipe_data(recipe_name)    # comes from selectbox above
         description = recipe_data.get("description")
         recipe_id = recipe_data.get("recipe_id")
+        recipe_tags = recipe_data.get("tags")
         
         st.markdown("""---""")
 
@@ -239,6 +240,8 @@ if db.check_password():
                     unit_char = str(ingredients_df['units'][i])
 
                 st.write(ingredients_df['ingredients'][i] + ' ' + amount_char + ' ' + unit_char)
+
+        st.write('Tags: ' + recipe_tags)
 
             # ingredients_list_onetext = db.create_ingredients_text(ingredients_df)
 
