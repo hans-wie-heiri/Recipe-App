@@ -85,6 +85,70 @@ def get_recipe_ingredients(recipe_id):
 
     return ingredient_df
 
+def create_id():
+    stamp= time.time()
+    id = int(round(stamp * 100,0))
+    return id
+
+def first_if_any(list):
+    if len(list) == 0:
+        return None
+    else:
+        return list[0]
+
+def ingredients_txt_to_df(ingredients_txt, unit_list):
+    tk_line = LineTokenizer()
+    imp_tokenized = tk_line.tokenize(ingredients_txt)
+
+    tk_word = nltk.RegexpTokenizer(r'\s+', gaps=True)
+    data = {
+        'recipe_id' : [],
+        'ingredient_id' : [],
+        'ingredient' : [],
+        'amount' : [],
+        'unit' : []
+    }
+    df = pd.DataFrame(data)
+
+    recipe_id = create_id()
+    ingredient_id = 1
+
+    for line in imp_tokenized:
+        tokenized_line = tk_word.tokenize(line)
+        ingredients = []
+        amount = []
+        unit = []
+        for word in tokenized_line:
+            low_word = word.lower()
+            if low_word in unit_list:
+                unit.append(word)
+            else:
+                try:
+                    result = float(word)
+                    amount.append(result)
+                except ValueError:
+                    ingredients.append(word)
+            ingredient_str = ' '.join(ingredients)
+        
+        new_row = {
+            'recipe_id' : recipe_id,
+            'ingredient_id' : ingredient_id,
+            'ingredient' : ingredient_str,
+            'amount' : first_if_any(amount),
+            'unit' : first_if_any(unit)
+        }
+        
+        # Use the loc method to add the new row to the DataFrame
+        df.loc[len(df)] = new_row
+        
+        ingredient_id += 1
+        
+    df['unique_key'] = df['recipe_id'].map(str) + df['ingredient_id'].map(str)
+    df['amount'] = df['amount'].fillna(0)
+    df['unit'] = df['unit'].fillna('keine')
+
+    return df
+
 def create_ingredients_text(ingredients_df):
     ingredients_list = []
     for i in range(len(ingredients_df)):

@@ -52,23 +52,14 @@ if db.check_password():
 
     # ------------- Helper Functions --------------
 
-    def create_id():
-        stamp= time.time()
-        id = int(round(stamp * 100,0))
-        return id
-
-    def first_if_any(list):
-        if len(list) == 0:
-            return None
-        else:
-            return list[0]
+   
 
     # ------------- Navigation Menu --------------
 
     selected = option_menu(
         menu_title = None,
-        options=[ "Find Recipe", "Add Recipe"],
-        icons=["search", "pencil-fill"],    # https://icons.getbootstrap.com/
+        options=[ "Find Recipe", "Add Recipe", "shopping list"],
+        icons=["search", "pencil-fill", "cart4"],    # https://icons.getbootstrap.com/
         orientation="horizontal"
     )
 
@@ -113,55 +104,7 @@ if db.check_password():
         # if extraction or st.session_state.extraction_state:
         #     st.session_state.extraction_state = True
 
-            tk_line = LineTokenizer()
-            imp_tokenized = tk_line.tokenize(ingredients_txt)
-
-            tk_word = nltk.RegexpTokenizer(r'\s+', gaps=True)
-            data = {
-                'recipe_id' : [],
-                'ingredient_id' : [],
-                'ingredient' : [],
-                'amount' : [],
-                'unit' : []
-            }
-            df = pd.DataFrame(data)
-
-            recipe_id = create_id()
-            ingredient_id = 1
-
-            for line in imp_tokenized:
-                tokenized_line = tk_word.tokenize(line)
-                ingredients = []
-                amount = []
-                unit = []
-                for word in tokenized_line:
-                    low_word = word.lower()
-                    if low_word in unit_list:
-                        unit.append(word)
-                    else:
-                        try:
-                            result = float(word)
-                            amount.append(result)
-                        except ValueError:
-                            ingredients.append(word)
-                    ingredient_str = ' '.join(ingredients)
-                
-                new_row = {
-                    'recipe_id' : recipe_id,
-                    'ingredient_id' : ingredient_id,
-                    'ingredient' : ingredient_str,
-                    'amount' : first_if_any(amount),
-                    'unit' : first_if_any(unit)
-                }
-                
-                # Use the loc method to add the new row to the DataFrame
-                df.loc[len(df)] = new_row
-                
-                ingredient_id += 1
-                
-            df['unique_key'] = df['recipe_id'].map(str) + df['ingredient_id'].map(str)
-            df['amount'] = df['amount'].fillna(0)
-            df['unit'] = df['unit'].fillna('keine')
+            df = db.ingredients_txt_to_df(ingredients_txt, unit_list)
 
             st.write("That's how it will be saved:")
             st.dataframe(df[['ingredient', 'amount', 'unit']])
@@ -181,7 +124,7 @@ if db.check_password():
                 st.success("Data saved!")
 
 
-    # ------------- Input and save recipes --------------
+    # ------------- Find recipes --------------
     if selected == "Find Recipe":
         st.header('Find a delicious Recipe')
 
@@ -246,3 +189,54 @@ if db.check_password():
             # ingredients_list_onetext = db.create_ingredients_text(ingredients_df)
 
             # st.write(ingredients_list_onetext)
+
+    # -------------create shopping list --------------
+    if selected == "shopping list":
+        st.header('shopping list')
+
+        receipes_shopping = st.multiselect('Select some Recipes', sorted(name_tag_df['name'].unique()))
+        
+        if len(receipes_shopping) > 0:
+            subset_recipes_shopping = name_tag_df[name_tag_df['name'].isin(receipes_shopping)]
+
+            recipe_shopping_ids = list(subset_recipes_shopping['recipe_id'].unique())
+
+            all_ingredients_df = pd.DataFrame( {
+                'ingredients': [],
+                'amounts' : [],
+                'units' : [],
+                'ingredients_keys' : []
+            })
+
+            for recipe_id in (recipe_shopping_ids):
+                ingredients_df = db.get_recipe_ingredients(int(recipe_id))
+                all_ingredients_df = pd.concat([all_ingredients_df, ingredients_df])
+            all_ingredients_df['amounts'] = pd.to_numeric(all_ingredients_df['amounts'])
+
+            shopping_list_df = pd.DataFrame(all_ingredients_df.groupby(['ingredients', 'units'])['amounts'].sum())
+            shopping_list_df = shopping_list_df.reset_index()
+            shopping_list_df = shopping_list_df[['ingredients', 'amounts', 'units']]
+            shopping_list_df = shopping_list_df[shopping_list_df['amounts'] > 0]
+            shopping_list_df = shopping_list_df.reset_index(drop=True)
+
+            edit_shopping_list = db.create_ingredients_text(shopping_list_df)
+
+            shopping_ingredients_txt = st.text_area("Insert Shopping Ingredients (with a line break)", edit_shopping_list,  height = 250)
+
+            shopping_df_for_print = db.ingredients_txt_to_df(shopping_ingredients_txt, unit_list)
+            shopping_df_for_print = shopping_df_for_print[['ingredient', 'amount', 'unit']]
+
+            with st.expander("See shopping list preview"):
+                st.dataframe(shopping_df_for_print)
+
+            @st.cache_data
+            def convert_df(df):
+                return df.style.format({"amount": "{:.2f}"}).to_html().encode('utf-8')
+
+            html = convert_df(shopping_df_for_print)
+
+            st.download_button(
+                "Download Shopping List",
+                html,
+                "shopping_list.html"
+            )
