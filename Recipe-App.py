@@ -106,6 +106,8 @@ if db.check_password():
 
             df = db.ingredients_txt_to_df(ingredients_txt, unit_list)
 
+            recipe_id = max(df['recipe_id'])
+
             st.write("That's how it will be saved:")
             st.dataframe(df[['ingredient', 'amount', 'unit']])
 
