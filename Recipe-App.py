@@ -233,8 +233,22 @@ if db.check_password():
 
             @st.cache_data
             def convert_df(df):
-                return df.style.format({"amount": "{:.2f}"}).to_html().encode('utf-8')
-
+                df.insert(loc = len(df.columns),column = 'got it',value = '<input type="checkbox" />')
+                styles = [dict(selector="th", props=[('font-family', 'sans-serif'),
+                                                     ('background-color', '#4CAF50'),
+                                                     ('color', 'white'),
+                                                     ('padding', '5px')]),
+                            dict(selector="caption", props=[("font-size", "150%"),
+                                                            ('font-family', 'sans-serif')])]
+                styled_table = df.style \
+                    .set_table_styles(styles) \
+                .set_caption('My Shopping List') \
+                .set_properties(**{'font-size': '12pt', 'font-family': 'sans-serif'}) \
+                .hide_index() \
+                .format({"amount": "{:.2f}"}) \
+                .render()
+                return styled_table
+            
             html = convert_df(shopping_df_for_print)
 
             st.download_button(
